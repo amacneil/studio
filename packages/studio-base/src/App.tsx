@@ -20,7 +20,6 @@ import ModalHost from "@foxglove/studio-base/context/ModalHost";
 import { PlayerSourceDefinition } from "@foxglove/studio-base/context/PlayerSelectionContext";
 import { UserNodeStateProvider } from "@foxglove/studio-base/context/UserNodeStateContext";
 import { useAppConfigurationValue } from "@foxglove/studio-base/hooks/useAppConfigurationValue";
-import ConsoleApiLayoutStorageProvider from "@foxglove/studio-base/providers/ConsoleApiLayoutStorageProvider";
 import CurrentLayoutProvider from "@foxglove/studio-base/providers/CurrentLayoutProvider";
 import CurrentUserProvider from "@foxglove/studio-base/providers/CurrentUserProvider";
 import ExtensionMarketplaceProvider from "@foxglove/studio-base/providers/ExtensionMarketplaceProvider";
@@ -48,10 +47,6 @@ export default function App(props: AppProps): JSX.Element {
     return new ConsoleApi(process.env.FOXGLOVE_API_URL!);
   }, []);
 
-  const [useFakeRemoteLayoutStorage = false] = useAppConfigurationValue<boolean>(
-    AppSetting.FAKE_REMOTE_LAYOUTS,
-  );
-
   const [showRos2Rosbridge = false] = useAppConfigurationValue<boolean>(
     AppSetting.SHOW_ROS2_ROSBRIDGE,
   );
@@ -69,7 +64,6 @@ export default function App(props: AppProps): JSX.Element {
     <AnalyticsProvider />,
     <ConsoleApiContext.Provider value={api} />,
     <CurrentUserProvider />,
-    !useFakeRemoteLayoutStorage && <ConsoleApiLayoutStorageProvider />,
     <ModalHost />, // render modal elements inside the ThemeProvider
     <AssetsProvider loaders={assetLoaders} />,
     <HoverValueProvider />,
@@ -79,7 +73,7 @@ export default function App(props: AppProps): JSX.Element {
     <ExtensionRegistryProvider />,
     <PlayerManager playerSources={filteredDataSources} />,
     /* eslint-enable react/jsx-key */
-  ].filter((x): x is JSX.Element => x !== false);
+  ];
 
   return (
     <MultiProvider providers={providers}>

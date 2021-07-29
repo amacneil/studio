@@ -15,7 +15,7 @@ import LayoutStorageContext from "@foxglove/studio-base/context/LayoutStorageCon
 import LayoutStorageDebuggingContext from "@foxglove/studio-base/context/LayoutStorageDebuggingContext";
 import { useAppConfigurationValue } from "@foxglove/studio-base/hooks/useAppConfigurationValue";
 import CacheOnlyLayoutStorage from "@foxglove/studio-base/services/CacheOnlyLayoutStorage";
-import ConsoleApiRemoteLayoutStorage from "@foxglove/studio-base/services/ConsoleApiRemoteLayoutStorage";
+import ConsoleApiLayoutStorage from "@foxglove/studio-base/services/ConsoleApiLayoutStorage";
 import OfflineLayoutStorage from "@foxglove/studio-base/services/OfflineLayoutStorage";
 
 const log = Logger.getLogger(__filename);
@@ -30,7 +30,7 @@ export default function ConsoleApiLayoutStorageProvider({
   const api = useConsoleApi();
   const currentUser = useCurrentUser();
 
-  const apiStorage = useMemo(() => new ConsoleApiRemoteLayoutStorage(api), [api]);
+  const apiStorage = useMemo(() => new ConsoleApiLayoutStorage(api), [api]);
 
   const layoutCache = useLayoutCache();
   const cacheOnlyStorage = useMemo(() => new CacheOnlyLayoutStorage(layoutCache), [layoutCache]);
@@ -48,15 +48,18 @@ export default function ConsoleApiLayoutStorageProvider({
       addToast(`Sync failed: ${error.message}`, { appearance: "error" });
     }
   }, [addToast, offlineStorage]);
+
   const debugging = useShallowMemo({ syncNow });
+
+  const layoutStorage = useMemo(() => {
+    return enableConsoleApiLayouts && currentUser ? offlineStorage : cacheOnlyStorage;
+  }, [cacheOnlyStorage, currentUser, enableConsoleApiLayouts, offlineStorage]);
 
   return (
     <LayoutStorageDebuggingContext.Provider
       value={process.env.NODE_ENV !== "production" && currentUser ? debugging : undefined}
     >
-      <LayoutStorageContext.Provider
-        value={enableConsoleApiLayouts && currentUser ? offlineStorage : cacheOnlyStorage}
-      >
+      <LayoutStorageContext.Provider value={layoutStorage}>
         {children}
       </LayoutStorageContext.Provider>
     </LayoutStorageDebuggingContext.Provider>

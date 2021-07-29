@@ -16,6 +16,7 @@ import { useLayoutStorage } from "@foxglove/studio-base/context/LayoutStorageCon
 import { useUserProfileStorage } from "@foxglove/studio-base/context/UserProfileStorageContext";
 import welcomeLayout from "@foxglove/studio-base/layouts/welcomeLayout";
 import CurrentLayoutState from "@foxglove/studio-base/providers/CurrentLayoutProvider/CurrentLayoutState";
+import { defaultPlaybackConfig } from "@foxglove/studio-base/providers/CurrentLayoutProvider/reducers";
 
 const log = Logger.getLogger(__filename);
 
@@ -106,9 +107,8 @@ function CurrentLayoutProviderWithInitialState({
     log.debug("updateLayout");
     layoutStorage
       .updateLayout({
-        targetID: selectedLayout.id,
+        id: selectedLayout.id,
         data: selectedLayout.data,
-        name: undefined,
       })
       .catch((error) => {
         log.error(error);
@@ -186,6 +186,16 @@ export default function CurrentLayoutProvider({
   const layoutStorage = useLayoutStorage();
 
   const loadInitialState = useAsync(async (): Promise<LayoutState> => {
+    // fixme - should this live elsewhere? maybe the layout state should provide an empty layout when no layout data
+    // is provided
+    const emptyLayout: Omit<PanelsState, "name" | "id"> = {
+      configById: {},
+      globalVariables: {},
+      userNodes: {},
+      linkedGlobalVariables: [],
+      playbackConfig: defaultPlaybackConfig,
+    };
+
     try {
       // If a legacy layout exists in localStorage, prefer that.
       const legacyLayout = migrateLegacyLayoutFromLocalStorage();
@@ -203,7 +213,7 @@ export default function CurrentLayoutProvider({
       if (currentLayoutId != undefined) {
         const layout = await layoutStorage.getLayout(currentLayoutId);
         if (layout != undefined) {
-          return { selectedLayout: { id: layout.id, data: layout.data } };
+          return { selectedLayout: { id: layout.id, data: layout.data ?? emptyLayout } };
         }
       }
       // Otherwise try to choose any available layout
@@ -211,7 +221,7 @@ export default function CurrentLayoutProvider({
       if (allLayouts[0]) {
         const layout = await layoutStorage.getLayout(allLayouts[0].id);
         if (layout) {
-          return { selectedLayout: { id: layout.id, data: layout.data } };
+          return { selectedLayout: { id: layout.id, data: layout.data ?? emptyLayout } };
         }
       }
       // If none were available, load the welcome layout.

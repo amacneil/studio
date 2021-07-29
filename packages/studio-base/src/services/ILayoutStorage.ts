@@ -10,42 +10,32 @@ export type UserID = string & { __brand: "UserID" };
 export type LayoutID = string & { __brand: "LayoutID" };
 export type ISO8601Timestamp = string & { __brand: "ISO8601Timestamp" };
 
-export type UserMetadata = {
-  id: UserID;
-  name: string;
-  email: string;
-};
-
-export type ConflictType =
-  | "local-delete-remote-update"
-  | "local-update-remote-delete"
-  | "both-update"
-  | "name-collision";
-
 /** Metadata that describes a panel layout. */
-export type LayoutMetadata = {
+export type Layout = {
   id: LayoutID;
   name: string;
   creatorUserId: UserID | undefined;
   createdAt: ISO8601Timestamp | undefined;
   updatedAt: ISO8601Timestamp | undefined;
   permission: "creator_write" | "org_read" | "org_write";
-  /**
-   * Indicates whether changes have been made to the user's copy of this layout that have yet to be
-   * saved. Save the changes by calling ILayoutStorage.syncLayout().
-   */
-  hasUnsyncedChanges: boolean;
-  conflict: ConflictType | undefined;
-  data?: never;
+  data: PanelsState;
+
+  // fixme - should these be at another layer
+  conflict?: boolean;
+  hasUnsyncedChanges?: boolean;
 };
 
-export type Layout = Omit<LayoutMetadata, "data"> & { data: PanelsState };
-
 export interface ILayoutStorage {
+  // fixme - syncing is implicit - remove
+  readonly supportsSyncing: boolean;
+
+  // can we do this with capabilities funciton?
+  readonly supportsSharing: boolean;
+
   addLayoutsChangedListener(listener: () => void): void;
   removeLayoutsChangedListener(listener: () => void): void;
 
-  getLayouts(): Promise<LayoutMetadata[]>;
+  getLayouts(): Promise<Layout[]>;
 
   getLayout(id: LayoutID): Promise<Layout | undefined>;
 
@@ -53,22 +43,14 @@ export interface ILayoutStorage {
     name: string;
     data: PanelsState;
     permission: "creator_write" | "org_read" | "org_write";
-  }): Promise<LayoutMetadata>;
+  }): Promise<Layout>;
 
   updateLayout(params: {
-    targetID: LayoutID;
+    id: LayoutID;
     name?: string;
     data?: PanelsState;
     permission?: "creator_write" | "org_read" | "org_write";
   }): Promise<void>;
-
-  readonly supportsSyncing: boolean;
-
-  syncLayout(
-    id: LayoutID,
-  ): Promise<{ status: "success"; newId?: LayoutID } | { status: "conflict"; type: ConflictType }>;
-
-  readonly supportsSharing: boolean;
 
   deleteLayout(params: { id: LayoutID }): Promise<void>;
 }

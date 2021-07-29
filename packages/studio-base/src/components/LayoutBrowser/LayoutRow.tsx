@@ -14,15 +14,14 @@ import {
   ContextualMenu,
 } from "@fluentui/react";
 import cx from "classnames";
-import { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { useMountedState } from "react-use";
 
-import conflictTypeToString from "@foxglove/studio-base/components/LayoutBrowser/conflictTypeToString";
 import { useTooltip } from "@foxglove/studio-base/components/Tooltip";
 import { useLayoutStorage } from "@foxglove/studio-base/context/LayoutStorageContext";
 import LayoutStorageDebuggingContext from "@foxglove/studio-base/context/LayoutStorageDebuggingContext";
 import { useConfirm } from "@foxglove/studio-base/hooks/useConfirm";
-import { LayoutMetadata } from "@foxglove/studio-base/services/ILayoutStorage";
+import { Layout } from "@foxglove/studio-base/services/ILayoutStorage";
 import { nonEmptyOrUndefined } from "@foxglove/studio-base/util/emptyOrUndefined";
 
 import { debugBorder } from "./styles";
@@ -71,15 +70,15 @@ export default function LayoutRow({
   onShare,
   onExport,
 }: {
-  layout: LayoutMetadata;
+  layout: Layout;
   selected: boolean;
-  onSave: (item: LayoutMetadata) => void;
-  onSelect: (item: LayoutMetadata) => void;
-  onRename: (item: LayoutMetadata, newName: string) => void;
-  onDuplicate: (item: LayoutMetadata) => void;
-  onDelete: (item: LayoutMetadata) => void;
-  onShare: (item: LayoutMetadata) => void;
-  onExport: (item: LayoutMetadata) => void;
+  onSave: (item: Layout) => void;
+  onSelect: (item: Layout) => void;
+  onRename: (item: Layout, newName: string) => void;
+  onDuplicate: (item: Layout) => void;
+  onDelete: (item: Layout) => void;
+  onShare: (item: Layout) => void;
+  onExport: (item: Layout) => void;
 }): JSX.Element {
   const styles = useStyles();
   const theme = useTheme();
@@ -142,15 +141,17 @@ export default function LayoutRow({
 
   const confirm = useConfirm();
 
+  /*
   const tooltipContent = useMemo(() => {
     const conflictString = conflictTypeToString(layout.conflict);
     if (conflictString == undefined) {
-      return layout.hasUnsyncedChanges ? "Changes not synced" : undefined;
+      return layout.hasUnsyncedChanges === ? "Changes not synced" : undefined;
     }
     return conflictString;
   }, [layout.conflict, layout.hasUnsyncedChanges]);
+  */
 
-  const changesOrConflictsTooltip = useTooltip({ contents: tooltipContent });
+  //const changesOrConflictsTooltip = useTooltip({ contents: tooltipContent });
 
   const layoutDebug = useContext(LayoutStorageDebuggingContext);
 
@@ -167,6 +168,7 @@ export default function LayoutRow({
   }, [confirm, isMounted, layout, onDelete]);
 
   const menuItems: (boolean | IContextualMenuItem)[] = [
+    /*
     layoutStorage.supportsSyncing && {
       key: "save",
       text: layout.hasUnsyncedChanges ? "Save changes" : "No unsaved changes",
@@ -175,6 +177,7 @@ export default function LayoutRow({
       ["data-test"]: "save-layout",
       disabled: !layout.hasUnsyncedChanges,
     },
+    */
     {
       key: "rename",
       text: "Rename",
@@ -300,7 +303,7 @@ export default function LayoutRow({
           onDismiss={() => setContextMenuEvent(undefined)}
         />
       )}
-      {changesOrConflictsTooltip.tooltip}
+      {/* fixme - changesOrConflictsTooltip.tooltip */}
       <Stack.Item grow className={styles.layoutName} title={layout.name}>
         {editingName ? (
           <TextField
@@ -334,10 +337,14 @@ export default function LayoutRow({
           ariaLabel="Layout actions"
           data={{ text: "x" }}
           data-test="layout-actions"
-          elementRef={changesOrConflictsTooltip.ref}
+          //elementRef={changesOrConflictsTooltip.ref}
           iconProps={{
             iconName:
-              layout.conflict != undefined ? "Error" : layout.hasUnsyncedChanges ? "Info" : "More",
+              layout.conflict != undefined
+                ? "Error"
+                : layout.hasUnsyncedChanges === true
+                ? "Info"
+                : "More",
             styles: {
               root: {
                 "& span": { verticalAlign: "baseline" },

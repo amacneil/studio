@@ -4,7 +4,7 @@
 
 import { makeStyles, Stack, Text } from "@fluentui/react";
 
-import { LayoutMetadata } from "@foxglove/studio-base/services/ILayoutStorage";
+import { Layout } from "@foxglove/studio-base/services/ILayoutStorage";
 
 import LayoutRow from "./LayoutRow";
 
@@ -45,15 +45,15 @@ export default function LayoutSection({
 }: {
   title: string | undefined;
   emptyText: string | undefined;
-  items: readonly LayoutMetadata[] | undefined;
+  items: readonly Layout[] | undefined;
   selectedId?: string;
-  onSave: (item: LayoutMetadata) => void;
-  onSelect: (item: LayoutMetadata) => void;
-  onRename: (item: LayoutMetadata, newName: string) => void;
-  onDuplicate: (item: LayoutMetadata) => void;
-  onDelete: (item: LayoutMetadata) => void;
-  onShare: (item: LayoutMetadata) => void;
-  onExport: (item: LayoutMetadata) => void;
+  onSave: (item: Layout) => void;
+  onSelect: (item: Layout) => void;
+  onRename: (item: Layout, newName: string) => void;
+  onDuplicate: (item: Layout) => void;
+  onDelete: (item: Layout) => void;
+  onShare: (item: Layout) => void;
+  onExport: (item: Layout) => void;
 }): JSX.Element {
   const styles = useStyles();
   return (

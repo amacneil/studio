@@ -10,7 +10,6 @@ import { useToasts } from "react-toast-notifications";
 import { useMountedState } from "react-use";
 import useAsyncFn from "react-use/lib/useAsyncFn";
 
-import conflictTypeToString from "@foxglove/studio-base/components/LayoutBrowser/conflictTypeToString";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
 import { useTooltip } from "@foxglove/studio-base/components/Tooltip";
 import { useAnalytics } from "@foxglove/studio-base/context/AnalyticsContext";
@@ -25,7 +24,7 @@ import { usePrompt } from "@foxglove/studio-base/hooks/usePrompt";
 import welcomeLayout from "@foxglove/studio-base/layouts/welcomeLayout";
 import { defaultPlaybackConfig } from "@foxglove/studio-base/providers/CurrentLayoutProvider/reducers";
 import { AppEvent } from "@foxglove/studio-base/services/IAnalytics";
-import { LayoutMetadata } from "@foxglove/studio-base/services/ILayoutStorage";
+import { Layout } from "@foxglove/studio-base/services/ILayoutStorage";
 import { downloadTextFile } from "@foxglove/studio-base/util/download";
 
 import LayoutSection from "./LayoutSection";
@@ -72,7 +71,7 @@ export default function LayoutBrowser({
   }, [reloadLayouts]);
 
   const onSelectLayout = useCallback(
-    async (item: Pick<LayoutMetadata, "id">) => {
+    async (item: Pick<Layout, "id">) => {
       const layout = await layoutStorage.getLayout(item.id);
       if (layout) {
         setSelectedLayout(layout);
@@ -82,7 +81,9 @@ export default function LayoutBrowser({
   );
 
   const onSaveLayout = useCallback(
-    async (item: LayoutMetadata) => {
+    async (item: Layout) => {
+      // fixme - this needs to use updateLayout
+      /*
       const result = await layoutStorage.syncLayout(item.id);
       switch (result.status) {
         case "success":
@@ -95,13 +96,14 @@ export default function LayoutBrowser({
           break;
         }
       }
+      */
     },
     [addToast, layoutStorage, onSelectLayout],
   );
 
   const onRenameLayout = useCallback(
-    async (item: LayoutMetadata, newName: string) => {
-      await layoutStorage.updateLayout({ targetID: item.id, name: newName });
+    async (item: Layout, newName: string) => {
+      await layoutStorage.updateLayout({ id: item.id, name: newName });
       if (currentLayoutId === item.id) {
         await onSelectLayout(item);
       }
@@ -110,7 +112,7 @@ export default function LayoutBrowser({
   );
 
   const onDuplicateLayout = useCallback(
-    async (item: LayoutMetadata) => {
+    async (item: Layout) => {
       const source = await layoutStorage.getLayout(item.id);
       if (source) {
         const newLayout = await layoutStorage.saveNewLayout({
@@ -125,7 +127,7 @@ export default function LayoutBrowser({
   );
 
   const onDeleteLayout = useCallback(
-    async (item: LayoutMetadata) => {
+    async (item: Layout) => {
       await layoutStorage.deleteLayout({ id: item.id });
       if (currentLayoutId !== item.id) {
         return;
@@ -173,7 +175,7 @@ export default function LayoutBrowser({
   }, [currentDateForStorybook, layoutStorage, analytics, onSelectLayout]);
 
   const onExportLayout = useCallback(
-    async (item: LayoutMetadata) => {
+    async (item: Layout) => {
       const layout = await layoutStorage.getLayout(item.id);
       if (layout) {
         const content = JSON.stringify(layout.data, undefined, 2);
@@ -185,7 +187,7 @@ export default function LayoutBrowser({
   );
 
   const onShareLayout = useCallback(
-    async (item: LayoutMetadata) => {
+    async (item: Layout) => {
       const existingSharedLayouts = layouts.value?.shared ?? [];
       const name = await prompt({
         title: `Share “${item.name}”`,
