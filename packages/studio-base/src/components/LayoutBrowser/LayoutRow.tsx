@@ -17,7 +17,6 @@ import cx from "classnames";
 import { useCallback, useContext, useState } from "react";
 import { useMountedState } from "react-use";
 
-import { useTooltip } from "@foxglove/studio-base/components/Tooltip";
 import { useLayoutStorage } from "@foxglove/studio-base/context/LayoutStorageContext";
 import LayoutStorageDebuggingContext from "@foxglove/studio-base/context/LayoutStorageDebuggingContext";
 import { useConfirm } from "@foxglove/studio-base/hooks/useConfirm";
@@ -141,18 +140,6 @@ export default function LayoutRow({
 
   const confirm = useConfirm();
 
-  /*
-  const tooltipContent = useMemo(() => {
-    const conflictString = conflictTypeToString(layout.conflict);
-    if (conflictString == undefined) {
-      return layout.hasUnsyncedChanges === ? "Changes not synced" : undefined;
-    }
-    return conflictString;
-  }, [layout.conflict, layout.hasUnsyncedChanges]);
-  */
-
-  //const changesOrConflictsTooltip = useTooltip({ contents: tooltipContent });
-
   const layoutDebug = useContext(LayoutStorageDebuggingContext);
 
   const confirmDelete = useCallback(() => {
@@ -168,16 +155,14 @@ export default function LayoutRow({
   }, [confirm, isMounted, layout, onDelete]);
 
   const menuItems: (boolean | IContextualMenuItem)[] = [
-    /*
-    layoutStorage.supportsSyncing && {
+    layoutStorage.supportsReset && {
       key: "save",
-      text: layout.hasUnsyncedChanges ? "Save changes" : "No unsaved changes",
+      text: layout.hasUnsyncedChanges === true ? "Save changes" : "No unsaved changes",
       iconProps: { iconName: "Upload" },
       onClick: saveAction,
       ["data-test"]: "save-layout",
-      disabled: !layout.hasUnsyncedChanges,
+      disabled: layout.hasUnsyncedChanges !== true,
     },
-    */
     {
       key: "rename",
       text: "Rename",
@@ -303,7 +288,6 @@ export default function LayoutRow({
           onDismiss={() => setContextMenuEvent(undefined)}
         />
       )}
-      {/* fixme - changesOrConflictsTooltip.tooltip */}
       <Stack.Item grow className={styles.layoutName} title={layout.name}>
         {editingName ? (
           <TextField
@@ -337,18 +321,11 @@ export default function LayoutRow({
           ariaLabel="Layout actions"
           data={{ text: "x" }}
           data-test="layout-actions"
-          //elementRef={changesOrConflictsTooltip.ref}
           iconProps={{
-            iconName:
-              layout.conflict != undefined
-                ? "Error"
-                : layout.hasUnsyncedChanges === true
-                ? "Info"
-                : "More",
+            iconName: layout.hasUnsyncedChanges === true ? "Info" : "More",
             styles: {
               root: {
                 "& span": { verticalAlign: "baseline" },
-                color: layout.conflict != undefined ? theme.semanticColors.errorIcon : undefined,
               },
             },
           }}

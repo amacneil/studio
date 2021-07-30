@@ -77,7 +77,7 @@ function layoutToLayoutRecord(layout: Layout): LayoutRecord {
 // Implement a LayoutStorage interface over OsContext
 export default class NativeStorageLayoutStorage implements ILayoutStorage {
   readonly supportsSharing = false;
-  readonly supportsSyncing = false;
+  readonly supportsReset = false;
 
   private static STORE_NAME = "layouts";
 

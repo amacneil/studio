@@ -20,7 +20,6 @@ import {
 import { PanelsState } from "@foxglove/studio-base/context/CurrentLayoutContext/actions";
 import { useLayoutStorage } from "@foxglove/studio-base/context/LayoutStorageContext";
 import LayoutStorageDebuggingContext from "@foxglove/studio-base/context/LayoutStorageDebuggingContext";
-import { usePrompt } from "@foxglove/studio-base/hooks/usePrompt";
 import welcomeLayout from "@foxglove/studio-base/layouts/welcomeLayout";
 import { defaultPlaybackConfig } from "@foxglove/studio-base/providers/CurrentLayoutProvider/reducers";
 import { AppEvent } from "@foxglove/studio-base/services/IAnalytics";
@@ -40,7 +39,6 @@ export default function LayoutBrowser({
   const isMounted = useMountedState();
   const { addToast } = useToasts();
   const layoutStorage = useLayoutStorage();
-  const prompt = usePrompt();
 
   const currentLayoutId = useCurrentLayoutSelector((state) => state.selectedLayout?.id);
   const { setSelectedLayout } = useCurrentLayoutActions();
@@ -81,24 +79,10 @@ export default function LayoutBrowser({
   );
 
   const onSaveLayout = useCallback(
-    async (item: Layout) => {
-      // fixme - this needs to use updateLayout
-      /*
-      const result = await layoutStorage.syncLayout(item.id);
-      switch (result.status) {
-        case "success":
-          if (result.newId != undefined) {
-            await onSelectLayout({ id: result.newId });
-          }
-          break;
-        case "conflict": {
-          addToast(conflictTypeToString(result.type), { autoDismiss: true, appearance: "warning" });
-          break;
-        }
-      }
-      */
+    async (layout: Layout) => {
+      await layoutStorage.updateLayout(layout, { reset: true });
     },
-    [addToast, layoutStorage, onSelectLayout],
+    [layoutStorage],
   );
 
   const onRenameLayout = useCallback(
@@ -187,31 +171,15 @@ export default function LayoutBrowser({
   );
 
   const onShareLayout = useCallback(
-    async (item: Layout) => {
-      const existingSharedLayouts = layouts.value?.shared ?? [];
-      const name = await prompt({
-        title: `Share “${item.name}”`,
-        value: item.name,
-        transformer: (value: string) => {
-          if (existingSharedLayouts.some((sharedLayout) => sharedLayout.name === value)) {
-            throw new Error("A shared layout with this name already exists.");
-          }
-          return value;
-        },
-      });
-      if (name != undefined) {
-        const layout = await layoutStorage.getLayout(item.id);
-        if (!layout) {
-          throw new Error("The layout could not be found.");
-        }
-        await layoutStorage.saveNewLayout({
-          name,
-          data: layout.data,
-          permission: "org_write",
-        });
-      }
+    async (layout: Layout) => {
+      layout.permission = "org_write";
+      await layoutStorage.updateLayout(layout);
+
+      // fixme - how do we make sure this is sent to the server?
+      // can layout storage provide an optional sync function?
+      // can the update functions accept an arg?
     },
-    [layoutStorage, layouts.value?.shared, prompt],
+    [layoutStorage],
   );
 
   const importLayout = useCallback(async () => {

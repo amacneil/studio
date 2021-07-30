@@ -18,18 +18,17 @@ export type Layout = {
   createdAt: ISO8601Timestamp | undefined;
   updatedAt: ISO8601Timestamp | undefined;
   permission: "creator_write" | "org_read" | "org_write";
+
+  // fixme - this needs to be optional cause we don't always return data
+  // also to support empty data as empty layout
   data: PanelsState;
 
   // fixme - should these be at another layer
-  conflict?: boolean;
   hasUnsyncedChanges?: boolean;
 };
 
 export interface ILayoutStorage {
-  // fixme - syncing is implicit - remove
-  readonly supportsSyncing: boolean;
-
-  // can we do this with capabilities funciton?
+  readonly supportsReset: boolean;
   readonly supportsSharing: boolean;
 
   addLayoutsChangedListener(listener: () => void): void;
@@ -45,12 +44,20 @@ export interface ILayoutStorage {
     permission: "creator_write" | "org_read" | "org_write";
   }): Promise<Layout>;
 
-  updateLayout(params: {
-    id: LayoutID;
-    name?: string;
-    data?: PanelsState;
-    permission?: "creator_write" | "org_read" | "org_write";
-  }): Promise<void>;
+  /**
+   * Update a layout that already exists
+   *
+   * An optional reset argument indicates the layout update should set the reset value for this layout.
+   */
+  updateLayout(
+    params: {
+      id: LayoutID;
+      name?: string;
+      data?: PanelsState;
+      permission?: "creator_write" | "org_read" | "org_write";
+    },
+    opt?: { reset: boolean },
+  ): Promise<void>;
 
   deleteLayout(params: { id: LayoutID }): Promise<void>;
 }
