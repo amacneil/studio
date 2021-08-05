@@ -52,6 +52,14 @@ declare module "@foxglove/studio" {
     previewTime?: number | undefined;
   }
 
+  export type AdvertiseArgs = {
+    /** The advertisement type */
+    type: string;
+
+    /** Additional arguments based on the type */
+    [key: string]: unknown;
+  };
+
   export type PanelExtensionContext = {
     /**
      * The root element for the panel. Add your panel elements as children under this element.
@@ -88,14 +96,6 @@ declare module "@foxglove/studio" {
     seekPlayback?: (time: number) => void;
 
     /**
-     * Process render events for the panel. Each render event receives a render state and a done callback.
-     * Render events occur frequently (60hz, 30hz, etc).
-     *
-     * The done callback should be called once the panel has rendered the render state.
-     */
-    onRender?: (renderState: Readonly<RenderState>, done: () => void) => void;
-
-    /**
      * Subscribe to an array of topic names.
      */
     subscribe(topics: string[]): void;
@@ -104,6 +104,40 @@ declare module "@foxglove/studio" {
      * Unsubscribe from all topics.
      */
     unsubscribeAll(): void;
+
+    /**
+     * Indicate intent to advertise on a specific topic.
+     *
+     * The args are specific to the current connection. If the current connection does not support
+     * publishing or the params are invalid, this call will throw.
+     */
+    advertise(topic: string, args: AdvertiseArgs): void;
+
+    /**
+     * Indicate that you no longer want to advertise on this topic.
+     */
+    unadvertise(topic: string): void;
+
+    /**
+     * Publish a message on a given topic. You must first advertise on the topic before publishing.
+     *
+     * @param topic The name of the topic to publish the message on
+     * @param message The message to publish
+     */
+    publish(topic: string, message: unknown): void;
+
+    /**
+     * Process render events for the panel. Each render event receives a render state and a done callback.
+     * Render events occur frequently (60hz, 30hz, etc).
+     *
+     * The done callback should be called once the panel has rendered the render state.
+     */
+    onRender?: (renderState: Readonly<RenderState>, done: () => void) => void;
+
+    /**
+     * Called when a new data source is selected
+     */
+    onDataSource?: () => void;
   };
 
   export type ExtensionPanelRegistration = {

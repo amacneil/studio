@@ -7,6 +7,7 @@ import { v4 as uuid } from "uuid";
 
 import Logger from "@foxglove/log";
 import {
+  AdvertiseArgs,
   ExtensionPanelRegistration,
   MessageEvent,
   PanelExtensionContext,
@@ -286,6 +287,24 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
         requestBackfill();
       },
+
+      advertise: (_topic: string, _args: AdvertiseArgs) => {
+        const ctx = latestPipelineContextRef.current;
+
+        if (!ctx) {
+          throw new Error("Unable to advertise. There is no active connection.");
+        }
+
+        //ctx.setPublishers(subscriberId)
+
+        // context.setPublishers
+        //setPublishers(id, [{ topic, datatype, datatypes, advertiser: { type: "panel", name } }]);
+        //return () => setPublishers(id, []);
+      },
+
+      unadvertise: () => {},
+
+      publish: () => {},
 
       unsubscribeAll: () => {
         subscribedTopicsRef.current.clear();

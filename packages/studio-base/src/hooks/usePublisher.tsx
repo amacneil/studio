@@ -14,7 +14,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-import { useMessagePipeline } from "@foxglove/studio-base/components/MessagePipeline";
+import {
+  MessagePipelineContext,
+  useMessagePipeline,
+} from "@foxglove/studio-base/components/MessagePipeline";
 import { PlayerCapabilities } from "@foxglove/studio-base/players/types";
 import { RosDatatypes } from "@foxglove/studio-base/types/RosDatatypes";
 
@@ -25,6 +28,10 @@ type Props = {
   name: string;
 };
 
+function canPublishSelector(context: MessagePipelineContext) {
+  return context.playerState.capabilities.includes(PlayerCapabilities.advertise);
+}
+
 // Registers a publisher with the player and returns a publish() function to publish data. This uses
 // no-op functions if the player does not have the `advertise` capability
 export default function usePublisher({
@@ -34,9 +41,8 @@ export default function usePublisher({
   name,
 }: Props): (msg: Record<string, unknown>) => void {
   const [id] = useState(() => uuidv4());
-  const canPublish = useMessagePipeline((context) =>
-    context.playerState.capabilities.includes(PlayerCapabilities.advertise),
-  );
+
+  const canPublish = useMessagePipeline(canPublishSelector);
   const publish = useMessagePipeline((context) => context.publish);
   const setPublishers = useMessagePipeline((context) => context.setPublishers);
   useEffect(() => {
