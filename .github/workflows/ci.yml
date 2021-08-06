@@ -1,9 +1,6 @@
 name: CI
 
-on:
-  push:
-    branches: [main, release/*]
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   test:
@@ -33,8 +30,6 @@ jobs:
             command: yarn run web:build:prod
           - name: test
             command: yarn run test --maxWorkers=100%
-          - name: storybook
-            command: yarn workspace @foxglove/studio-base run chromatic
           - name: pack studio-base
             command: yarn workspace @foxglove/studio-base pack
         include:
@@ -67,11 +62,48 @@ jobs:
       - run: yarn install --immutable
 
       - run: ${{ matrix.config.command }}
-        env:
-          # Chromatic fails to run on PR merge ref unless head BRANCH and SHA are passed explicitly
-          CHROMATIC_BRANCH: ${{ github.event.pull_request.head.ref || github.ref }}
-          CHROMATIC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+
+  storybook:
+    runs-on: ubuntu-20.04
+
+    name: storybook (ubuntu-20.04)
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+
+      # - name: Restore cache
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: |
+      #       .yarn/cache
+      #       **/node_modules
+      #     key: v5-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+      #     restore-keys: v5-${{ runner.os }}-yarn-
+
+      # - run: yarn install --immutable
+
+      # - run: yarn workspace @foxglove/studio-base run build-storybook
+
+      - uses: hmarr/debug-action@v2 # FIXME
+
+      - run: echo ${{ github.event.repository.full_name }}
+      - run: echo ${{ github.event.pull_request.base.repo.full_name }}
+
+      - uses: chromaui/action@v1
+        if: ${{ github.event.repository.full_name == 'foxglove/studio' || github.event.pull_request.base.repo.full_name == 'foxglove/studio' }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # FIXME
+          projectToken: f50040a29fb8
+          storybookBuildDir: packages/studio-base/storybook-static
+          # autoAcceptChanges: main
+          exitOnceUploaded: true
 
   integration:
     runs-on: ${{ matrix.os }}
