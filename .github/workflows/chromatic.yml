@@ -1,0 +1,90 @@
+# This workflow runs on PRs in a trusted context (with access to secrets)
+# to upload storybook results to Chromatic.
+# It does not access the PR code other than the storybook artifact.
+name: Chromatic
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types:
+      - completed
+
+jobs:
+  chromatic:
+    runs-on: ubuntu-20.04
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # required for Chromatic
+          lfs: true
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            .yarn/cache
+            **/node_modules
+          key: v5-${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: v5-${{ runner.os }}-yarn-
+
+      - run: yarn install --immutable
+
+      - name: Download artifact
+        uses: actions/github-script@v4
+        with:
+          script: |
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: ${{github.event.workflow_run.id }},
+            });
+            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "storybook-static"
+            })[0];
+            var download = await github.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip',
+            });
+            var fs = require('fs');
+            fs.writeFileSync('${{github.workspace}}/storybook-static.zip', Buffer.from(download.data));
+
+      - run: unzip storybook-static.zip -d packages/studio-base/storybook-static
+
+      - run: find packages/studio-base/storybook-static # FIXME
+
+      - uses: hmarr/debug-action@v2 # FIXME
+
+      # - name: Install Chromatic
+      #   run: |
+      #     set -euxo pipefail
+      #     npm init -y
+      #     test -s storybook-static/chromatic-version.txt
+      #     npm install --save-dev "chromatic@$(cat storybook-static/chromatic-version.txt)"
+      #     npx chromatic --version
+
+      - run: npm init -y
+
+      - name: Publish Chromatic
+        uses: foxglove/chromatic-cli@next
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # FIXME
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+          storybookBuildDir: packages/studio-base/storybook-static
+          # autoAcceptChanges: main
+          exitOnceUploaded: true
+
+      # - run: chromatic --storybook-build-dir storybook-static --auto-accept-changes main --exit-once-uploaded
+      #   env:
+      #     # pass BRANCH and SHA explicitly since we don't have the git repo
+      #     CHROMATIC_SLUG: ${{ github.event.workflow_run.head_repository.full_name }}
+      #     CHROMATIC_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      #     CHROMATIC_SHA: ${{ github.event.workflow_run.head_sha }}
+      #     CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
